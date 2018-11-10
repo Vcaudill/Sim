@@ -57,7 +57,7 @@ def fecunity(individuals, opfit, repoduction, loci, sigma):
     # rep of a number could sum and lace it in a list 0, 1
     nextgenlist = {}
     # print(rep)
-    for i in range(1, locus + 1):
+    for i in range(1, loci + 1):
         nextgenlist["locus_" + str(i)] = []
     # for each loci in this dictionary need to repeat 0/1s nested for loops?
     count = 0
@@ -147,13 +147,13 @@ def averages(newindividuals, locus, poppopnum, opfit, sigma):
 # multiple_generations takes the inital population and runs it n geration times
 
 
-def sim(poppopnum, loci, opfit, opfit2, opfit3, repoduction, inver_mutation_rate, rate, genend, name):
+def sim(poppopnum, loci, opfit, opfit2, opfit3, repoduction, inver_mutation_rate, rate, genend, name, sigma):
     count_n = 1
     # count_n is counting the generations so we know what geration we are on
     individuals = ipopulationcontrol(poppopnum, loci, rate)
     print(individuals)
-    allele_feq = allele_freq_count(individuals, locus, poppopnum)
-    ave_geno, avaerage_fit = averages(individuals, locus, poppopnum, opfit,
+    allele_feq = allele_freq_count(individuals, loci, poppopnum)
+    ave_geno, avaerage_fit = averages(individuals, loci, poppopnum, opfit,
                                       sigma)
     # do not use . at beginning will save in system and not as a shareable file
     allele_feq['generation'] = count_n
@@ -171,9 +171,9 @@ def sim(poppopnum, loci, opfit, opfit2, opfit3, repoduction, inver_mutation_rate
             nextgenlistDict = fecunity(individuals, opfit, repoduction, loci,
                                        sigma)
             newindividuals = random5(nextgenlistDict, poppopnum,
-                                     inver_mutation_rate, locus)
-            allele_feq = allele_freq_count(newindividuals, locus, poppopnum)
-            ave_geno, avaerage_fit = averages(newindividuals, locus, poppopnum,
+                                     inver_mutation_rate, loci)
+            allele_feq = allele_freq_count(newindividuals, loci, poppopnum)
+            ave_geno, avaerage_fit = averages(newindividuals, loci, poppopnum,
                                               opfit, sigma)
             count_n = count_n + 1
             if count_n == 300:
@@ -191,6 +191,102 @@ def sim(poppopnum, loci, opfit, opfit2, opfit3, repoduction, inver_mutation_rate
             writer.writerow(allele_feq)
 
 
+def fit_test_sim(poppopnum, loci, opfit, repoduction, inver_mutation_rate, rate, stop, name, sigma):
+    count_n = 1
+    # count_n is counting the generations so we know what geration we are on
+    individuals = ipopulationcontrol(poppopnum, loci, rate)
+    # print(individuals)
+    allele_feq = allele_freq_count(individuals, loci, poppopnum)
+    ave_geno, avaerage_fit = averages(individuals, loci, poppopnum, opfit,
+                                      sigma)
+    # do not use . at beginning will save in system and not as a shareable file
+    allele_feq['generation'] = count_n
+    allele_feq['population_size'] = poppopnum
+    # allele_feq['mu'] = (1 / inver_mutation_rate)
+    allele_feq['mean_pheno'] = ave_geno
+    allele_feq['mean_fit'] = avaerage_fit
+
+    with open(name, 'w') as f:
+        writer = csv.DictWriter(f, fieldnames=allele_feq.keys())
+        writer.writeheader()
+        writer.writerow(allele_feq)
+        END = "go"
+        while END == "go":
+            #print("generation", count_n)
+            nextgenlistDict = fecunity(individuals, opfit, repoduction, loci,
+                                       sigma)
+            newindividuals = random5(nextgenlistDict, poppopnum,
+                                     inver_mutation_rate, loci)
+            allele_feq = allele_freq_count(newindividuals, loci, poppopnum)
+            ave_geno, avaerage_fit = averages(newindividuals, loci, poppopnum,
+                                              opfit, sigma)
+            count_n = count_n + 1
+
+            allele_feq['generation'] = count_n
+            allele_feq['population_size'] = poppopnum
+            # allele_feq['mu'] = (1 / inver_mutation_rate)
+            allele_feq['mean_pheno'] = ave_geno
+            allele_feq['mean_fit'] = avaerage_fit
+            individuals = newindividuals
+            # heres where i will be making a csv
+            writer.writerow(allele_feq)
+            if (avaerage_fit >= stop):
+                END = "stop"
+
+
+def fit_test_burnin_sim(poppopnum, loci, opfit, opfit2, repoduction, inver_mutation_rate, rate, stop, name, sigma, burnin_gen_min):
+    count_n = 1
+    burnin_gen = 0
+    # count_n is counting the generations so we know what geration we are on
+    individuals = ipopulationcontrol(poppopnum, loci, rate)
+    # print(individuals)
+    allele_feq = allele_freq_count(individuals, loci, poppopnum)
+    ave_geno, avaerage_fit = averages(individuals, loci, poppopnum, opfit,
+                                      sigma)
+    # do not use . at beginning will save in system and not as a shareable file
+    allele_feq['generation'] = count_n
+    allele_feq['population_size'] = poppopnum
+    # allele_feq['mu'] = (1 / inver_mutation_rate)
+    allele_feq['mean_pheno'] = ave_geno
+    allele_feq['mean_fit'] = avaerage_fit
+    allele_feq['burnin'] = burnin_gen
+
+    with open(name, 'w') as f:
+        writer = csv.DictWriter(f, fieldnames=allele_feq.keys())
+        writer.writeheader()
+        writer.writerow(allele_feq)
+        END = "go"
+        while END == "go":
+            #print("generation", count_n)
+            nextgenlistDict = fecunity(individuals, opfit, repoduction, loci,
+                                       sigma)
+            newindividuals = random5(nextgenlistDict, poppopnum,
+                                     inver_mutation_rate, loci)
+            allele_feq = allele_freq_count(newindividuals, loci, poppopnum)
+            ave_geno, avaerage_fit = averages(newindividuals, loci, poppopnum,
+                                              opfit, sigma)
+            count_n = count_n + 1
+
+            allele_feq['generation'] = count_n
+            allele_feq['population_size'] = poppopnum
+            # allele_feq['mu'] = (1 / inver_mutation_rate)
+            allele_feq['mean_pheno'] = ave_geno
+            allele_feq['mean_fit'] = avaerage_fit
+            allele_feq['burnin'] = burnin_gen
+            individuals = newindividuals
+            # heres where i will be making a csv
+            writer.writerow(allele_feq)
+            if (avaerage_fit >= stop):
+                burnin_gen = burnin_gen + 1
+                if (burnin_gen == burnin_gen_min):
+                    opfit = opfit2
+                    avaerage_fit = 0
+            if (burnin_gen >= burnin_gen_min):
+                if (avaerage_fit >= stop):
+                    END = "stop"
+
+
+'''
 path = "/Users/victoria/Desktop/Sim/"
 folder = "CSV/"
 special = "multi_opfit"
@@ -202,7 +298,7 @@ opfit3 = (loci / 1.5)  # the third opfit
 repoduction = 50  # number used to increase replication output
 inver_mutation_rate = 100000  # how likely something will mutate 1/(whatever u put)
 rate = .5  # the percentage of 0 or 1 to be in population (1-rate, rate) (0, 1)
-genend = 10000  # what generation simulation will end at (this will change later on)
+genend = 100  # what generation simulation will end at (this will change later on)
 sigma = (.25 * loci)  # how wide the bell curve is
 
 # name = "/".join([path, 'popsize'str(poppopnum), str(loci)])
@@ -212,4 +308,5 @@ name = path + folder + 'popsize_' + str(poppopnum) + '_loci_' + str(
     sigma) + "_starting_rate_" + str(rate) + special + ".csv"
 
 
-sim(poppopnum, loci, opfit, opfit2, opfit3, repoduction, inver_mutation_rate, rate, genend, name)
+sim(poppopnum, loci, opfit, opfit2, opfit3, repoduction, inver_mutation_rate, rate, genend, name, sigma)
+'''
